@@ -1,0 +1,9 @@
+html {
+  font-family: 'Roboto'
+}
+
+body {
+  max-width: 768px;
+  margin: 0 auto;
+  background-color: #EFEFEF
+}
