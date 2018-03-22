@@ -19,7 +19,17 @@
 			<h2>Part2</h2>
 			<div id="chart" class="chartDiv"></div>
 			<div id="button" class="buttonDiv"></div>
-			<div id="map"></div>
+			<!-- <div id="map"></div> -->
+			<table style="width: 100%">
+				<tr>
+					<td style="width: 50%">
+						<div id="map" />
+					</td>
+					<td style="width: 50%">
+						<div id="barChart" />
+					</td>
+				</tr>
+			</table>
 			<script type="text/javascript">
 
 				//Global height
@@ -37,7 +47,7 @@
 					// Define map projection
 					var projection = d3.geoMercator()
 						.scale(30000)
-						.center([-73.9, 40.7])
+						.center([-74, 40.7])
 						.translate([w_map / 2, h / 2]);
 
 					// Define path generator
@@ -66,23 +76,23 @@
 						if (startDate > new Date('2016-01-01')) {
 							return;
 						}
-						var endDate = new Date(startDate.getFullYear(), 11, 31)	
+						var endDate = new Date(startDate.getFullYear(), 11, 31)
 
 						// modify selected area programmatically 				
 						gBrush.call(brush.move, [startDate, endDate].map(xScale));
 
 						// do next iteration
 						var nextDate = new Date(startDate.getFullYear() + 1, 0, 1)
-						setTimeout(function(){ animate(nextDate); }, 1000);
+						setTimeout(function () { animate(nextDate); }, 1000);
 					};
 				}
 
-				var setupChart = function () {
+				var setupTimeline = function () {
 					//Create SVG element
 					var chartDiv = document.getElementById("chart");
-					var svg_chart = d3.select(chartDiv).append("svg");
+					var svg_timeline = d3.select(chartDiv).append("svg");
 					var w_chart = chartDiv.clientWidth;
-					svg_chart.attr("width", w_chart).attr("height", h_chart);
+					svg_timeline.attr("width", w_chart).attr("height", h_chart);
 
 					//For converting Dates to strings
 					var formatTime = d3.timeFormat("%Y");
@@ -92,6 +102,7 @@
 						return {
 							index: parseFloat(d.INDEX),
 							date: new Date(d.RPT_DT),  //Make a new Date object
+							hour: parseFloat(d.CMPLNT_FR_TM),
 							lat: parseFloat(d.Latitude),  //Convert from string to float
 							lon: parseFloat(d.Longitude)
 						};
@@ -116,35 +127,35 @@
 						.ticks(10);
 
 					//Create X axis
-					svg_chart.append("g")
+					svg_timeline.append("g")
 						.attr("class", "x axis")
 						.attr("transform", "translate(0," + (h_chart - padding) + ")")
 						.call(xAxis);
 
 					//Create Y axis
-					svg_chart.append("g")
+					svg_timeline.append("g")
 						.attr("class", "y axis")
 						.attr("transform", "translate(" + padding + ",0)")
 						.call(yAxis);
 
 					// now add titles to the axes
-					svg_chart.append("text")
+					svg_timeline.append("text")
 						.attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
 						.attr("transform", "translate(" + (padding / 3) + "," + (h_chart / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
 						.text("# of murders");
 
-					svg_chart.append("text")
+					svg_timeline.append("text")
 						.attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
 						.attr("transform", "translate(" + (w_chart / 2) + "," + (h_chart) + ")")  // centre below axis
 						.text("Year");
 
 					// now add titles to the graph
-					svg_chart.append("text")
+					svg_timeline.append("text")
 						.attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
 						.attr("transform", "translate(" + (w_chart / 2) + "," + (padding / 2) + ")")  // text is drawn off the screen top left, move down and out and rotate
 						.text("NYC Crimes");
 
-					function drawChart(data) {
+					function drawTimeline(data) {
 						//Calibrate the scale domain, given the max value in dataset
 						xScale.domain([
 							d3.min(data, function (d) { return new Date(d.key); }),
@@ -158,16 +169,119 @@
 							.x(function (d) { return xScale(new Date(d.key)); })
 							.y(function (d) { return yScale(d.values.length); });
 
-						svg_chart.append("path")
+						svg_timeline.append("path")
 							.datum(data)
 							.attr("class", "line")
 							.attr("d", line);
 
 						//Update X axis
-						svg_chart.select(".x.axis")
+						svg_timeline.select(".x.axis")
 							.transition()
 							.duration(500)
 							.call(xAxis);
+
+						//Update Y axis
+						svg_timeline.select(".y.axis")
+							.transition()
+							.duration(500)
+							.call(yAxis);
+					};
+
+					return { xScale, rowConverter, svg_timeline, drawTimeline }
+				}
+
+				var setupHistogram = function () {
+					var empty_data = new Array(24).fill(0);
+
+					//Create SVG element
+					var chartDiv = document.getElementById("barChart");
+					var svg_chart = d3.select(chartDiv).append("svg");
+					var w_chart = chartDiv.clientWidth;
+					svg_chart.attr("width", w_chart).attr("height", h);
+
+					//Create scale functions, domain for y-scale will be set up later when the data is available
+					var xScale = d3.scaleBand()
+						.domain(d3.range(empty_data.length))
+						.rangeRound([padding, w_chart - padding])
+						.paddingInner(0.1);
+
+					var yScale = d3.scaleLinear()
+						.domain([0, d3.max(empty_data)])
+						.range([h - padding, padding]);
+
+					//Define X axis
+					var xAxis = d3.axisBottom()
+						.scale(xScale)
+						.ticks(5);
+
+					//Define Y axis
+					var yAxis = d3.axisLeft()
+						.scale(yScale)
+						.ticks(5);
+
+					//Create bars
+					svg_chart.selectAll("rect")
+						.data(empty_data)
+						.enter()
+						.append("rect")
+						.attr("x", function (d, i) {
+							return xScale(i);
+						})
+						.attr("y", function (d) {
+							return yScale(d);
+						})
+						.attr("width", xScale.bandwidth())
+						.attr("height", function (d) {
+							return h - yScale(d) - padding;
+						})
+						.attr("fill", d => `rgb(0, 0, ${Math.round(d * 10)})`);
+
+					//Create X axis
+					svg_chart.append("g")
+						.attr("class", "x axis")
+						.attr("transform", "translate(0," + (h - padding) + ")")
+						.call(xAxis);
+
+					//Create Y axis
+					svg_chart.append("g")
+						.attr("class", "y axis")
+						.attr("transform", "translate(" + padding + ",0)")
+						.call(yAxis);
+
+					// now add titles to the axes
+					svg_chart.append("text")
+						.attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+						.attr("transform", "translate(" + (padding / 3) + "," + (h / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+						.text("# of crimes");
+
+					svg_chart.append("text")
+						.attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+						.attr("transform", "translate(" + (w_chart / 2) + "," + (h) + ")")  // centre below axis
+						.text("Hour");
+
+					// now add titles to the graph
+					svg_chart.append("text")
+						.attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+						.attr("transform", "translate(" + (w_chart / 2) + "," + (padding / 2) + ")")  // text is drawn off the screen top left, move down and out and rotate
+						.text("NYC Crimes in hours");
+
+					//On click, update with new data			
+					function redrawBarChart(data) {
+						//Recalibrate the scale domain, given the new max value in dataset
+						yScale.domain([0, d3.max(data)]);
+						//Update all rects
+						svg_chart.selectAll("rect")
+							.data(data)
+							.transition()
+							.delay((d, i) => i / data.length * 100)
+							.duration(200)
+							.attr("y", function (d) {
+								return yScale(d);
+							})
+							.attr("height", function (d) {
+								return h - yScale(d) - padding;
+							})
+							.attr("fill", d => `rgb(0, 0, ${Math.round(d * 10)})`);
 
 						//Update Y axis
 						svg_chart.select(".y.axis")
@@ -176,11 +290,18 @@
 							.call(yAxis);
 					};
 
-					return { xScale, rowConverter, svg_chart, drawChart }
+					function createBarData(data) {
+						var barData = new Array(24).fill(0);
+						data.forEach(datum => { barData[parseInt(datum.hour)] += 1 });
+						return barData;
+					}
+
+					return { svg_chart, redrawBarChart, createBarData }
 				}
 
 				var { projection, path, color, svg_map, w_map } = setupMap();
-				var { xScale, rowConverter, svg_chart, drawChart } = setupChart();
+				var { xScale, rowConverter, svg_timeline, drawTimeline } = setupTimeline();
+				var { svg_chart, redrawBarChart, createBarData } = setupHistogram();
 
 				//Load in GeoJSON data
 				d3.json("boroughs.geojson", function (json) {
@@ -193,7 +314,9 @@
 						.attr("d", path)
 						.style("fill", function (d) {
 							return color(d.id);
-						});
+						})
+						.attr("stroke", "black")
+						.attr("stroke-width", 0.5);
 
 					//Create one label per state
 					svg_map.selectAll("text")
@@ -224,8 +347,13 @@
 							.key(function (d) { return d.date; })
 							.entries(data);
 
+						console.log('sorted', data)
+						console.log('grouped', convertedData)
+
 						// draw the path chart from the sorted and grouped data
-						drawChart(convertedData);
+						drawTimeline(convertedData);
+
+						redrawBarChart(createBarData(data));
 
 						// add circles to map
 						var circles = svg_map
@@ -264,17 +392,33 @@
 							}
 						}
 
+						function updateChart() {
+							// disregard brushes w/o selections  
+							// ref: http://bl.ocks.org/mbostock/6232537
+							if (!d3.event.selection) return;
+
+							var d_brushed = d3.selectAll(".show").data();
+							// populate table if one or more elements is brushed
+							if (d_brushed.length > 0) {
+								redrawBarChart(createBarData(d_brushed));
+							} else {
+								// empty selection
+								redrawBarChart(new Array(24).fill(0));
+							}
+						}
+
 						var brush = d3.brushX()
 							.extent([
 								[padding, padding],
-								[svg_chart.attr("width") - 2 * padding, svg_chart.attr("height") - padding]
+								[svg_timeline.attr("width") - 2 * padding, svg_timeline.attr("height") - padding]
 							])
-							.on("brush", onBrush);
+							.on("brush", onBrush)
+							.on("end", updateChart);
 
-						var gBrush = svg_chart.append("g")
+						var gBrush = svg_timeline.append("g")
 							.call(brush);
 
-						setupButton(gBrush, brush, xScale);							
+						setupButton(gBrush, brush, xScale);
 
 					});
 
