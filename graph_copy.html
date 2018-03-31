@@ -30,15 +30,41 @@
 				techniques. It can give you a simple overview and comparison about the different techniques used in different articles.
 			</p>
 
-			<h4>Use Figure 7 to find the most common design choice within each category for the Visual narrative and Narrative structure (the categories within visual narrative are 'visual structuring', 'highlighting', etc).</h4>
-			<p>Baracklé</p>
+			<h4>Use Figure 7 to find the most common design choice within each category for the Visual narrative and
+					Narrative structure (the categories within visual narrative are 'visual structuring', 'highlighting', etc).</h4>
+			<p><b>Here are the most used design choices for each category:</b></p>
+			<ul>
+				<li>Visual narrative:
+					<ul>
+						<li>Visual structuring - Consistent visual platform </li>
+						<li>Highlighting - Feature distinction </li>
+						<li>Transition guidance - Object continuity </li>
+					</ul>
+				</li>
+				<li>Narrative structure:
+					<ul>
+						<li>Ordering - User directed path</li>
+						<li>Interactivity - Filtering / section / search</li>
+						<li>Messaging - Captions / headlines</li>
+					</ul>
+				</li>
+			</ul>
 
 			<h4>Check out Figure 8 and section 4.3. What is your favorite genre of narrative visualization? Why?</h4>
-			<p>Cseresznyelé</p>
+			<p>As it was mentioned in the article as well, each genre is good for different purposes, thus it is hard to
+				 choose one as the favourite for a general purpose. So given that, I would say I prefer the magazine type,
+				 since that gives a better overview about even a difficult subject and the subject can be easily discussed
+				 through it in
+				 details.
+			</p>
 
 			<h4>What is your least favorite genre? Why?</h4>
-			<p>Paradicsomlé</p>
-
+			<p>The flowcharts are definitely my least favourite genre. There's no denying that flowcharts can be a very
+				 powerful tool for visualization, but there are far too many examples where poorly edited flowcharts were
+				 used which gave a great deal of work to do reader who wanted to make out the meaning of the confusing and
+				 crowded charts. And that is the main reason why I dislike them: they are often bad quality and now when I
+				 see one I look at it with prejudice.
+			</p>
 
 		</div>
 		<div class="card">
@@ -359,7 +385,7 @@
 						.text(function (d) {
 							if (d.properties.BoroName) {
 								return d.properties.BoroName;
-							};
+							}
 						});
 
 					d3.csv("all_murder.csv", rowConverter, function (data) {
